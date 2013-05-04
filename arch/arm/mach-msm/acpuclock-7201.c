@@ -452,7 +452,6 @@ static struct clkctl_acpu_speed pll0_960_pll1_737_pll2_1200_pll4_800_25a[] = {
 	{ 0, 400000, ACPU_PLL_4, 6, 1, 50000, 3, 4, 122880 },
 	{ 1, 480000, ACPU_PLL_0, 4, 1, 60000, 3, 5, 122880 },
 	{ 1, 600000, ACPU_PLL_2, 2, 1, 75000, 3, 6, 200000 },
-    { 1, 800000, ACPU_PLL_2, 2, 1, 100000, 3, 7, 200000 },
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0}, {0, 0, 0, 0} }
 };
 
@@ -468,7 +467,6 @@ static struct clkctl_acpu_speed pll0_960_pll1_737_pll2_1200_pll4_800_25a[] = {
 #define PLL_1008_MHZ	52
 #define PLL_1056_MHZ	55
 #define PLL_1200_MHZ	62
-#define PLL_OC_MHZ	70
 
 #define PLL_CONFIG(m0, m1, m2, m4) { \
 	PLL_##m0##_MHZ, PLL_##m1##_MHZ, PLL_##m2##_MHZ, PLL_##m4##_MHZ, \
@@ -647,12 +645,6 @@ static void acpuclk_set_div(const struct clkctl_acpu_speed *hunt_s)
 	/* CLK_SEL_SRC1NO */
 	src_sel = reg_clksel & 1;
 
-	/* Perform the Overclock */
-	if(hunt_s->a11clk_khz == 800000) {
-                	writel(PLL_OC_MHZ, PLLn_L_VAL(2)); /* This is where real Overclock happens */
-                	udelay(50);
-	}
-
 	/*
 	 * If the new clock divider is higher than the previous, then
 	 * program the divider before switching the clock
@@ -673,12 +665,6 @@ static void acpuclk_set_div(const struct clkctl_acpu_speed *hunt_s)
 	/* Program clock source selection */
 	reg_clksel ^= 1;
 	writel_relaxed(reg_clksel, A11S_CLK_SEL_ADDR);
-
-	/* Restore from Overclock */
-	if(hunt_s->a11clk_khz <= 600000) {
-                writel(PLL_1200_MHZ, PLLn_L_VAL(2)); /* This is for restoring original speed of PLL2 when we are not over clocking. */
-                udelay(50);
-        }
 
 	/*
 	 * If the new clock divider is lower than the previous, then
